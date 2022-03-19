@@ -1,6 +1,4 @@
-from docx.enum.text import WD_COLOR_INDEX
-from docx import Document
-import re
+from docxPdfImage import *
 
 def color_string(key,countKey,p1,p):
 ##    tô vàng key
