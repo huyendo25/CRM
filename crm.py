@@ -19,7 +19,7 @@ def start(input_file):
 ##    input: file word đầu vào
 ##    output: ảnh base64 để hiển thị
 
-    input_image,output_file,img_org_base64 = input_processing(input_file)
+    output_file,img_org_base64 = input_processing(input_file)
     # Xóa file pdf,folder chứa ảnh khi đã chuyển qua base64 xong
     input_file_name = os.path.splitext(input_file)[0]
     deleteFileFolder(input_file_name)
@@ -36,14 +36,14 @@ def stage2(input_file,key):
     input_file_name, input_file_end = os.path.splitext(input_file)
     input_file_name = input_file_name+'_colored'
     output_file = input_file_name+input_file_end
-    findColor(input_file,key,output_file)
-    input_image,output_file,img_org_base64 = input_processing(output_file)
+    countKey = findColor(input_file,key,output_file)
+    output_file,img_org_base64 = input_processing(output_file)
     # Xóa file pdf,folder chứa ảnh khi đã chuyển qua base64 xong
     deleteFileFolder(input_file_name)
     file = input_file_name+'.docx'
     if os.path.exists(file):
         os.remove(file)
-    return img_org_base64
+    return img_org_base64, countKey
     
 def stage3(input_file,key,value,numberList):
 ##    Bước thứ 3
@@ -58,7 +58,7 @@ def stage3(input_file,key,value,numberList):
     input_file_name = input_file_name+'_replaced'
     output_file = input_file_name+input_file_end
     replace(input_file,key,value,numberList,output_file)
-    input_image,output_file,img_org_base64 = input_processing(output_file)
+    output_file,img_org_base64 = input_processing(output_file)
     # Xóa file pdf,folder chứa ảnh khi đã chuyển qua base64 xong
     deleteFileFolder(input_file_name)
     return img_org_base64,output_file
@@ -66,9 +66,9 @@ def stage3(input_file,key,value,numberList):
 input_file = 'output/mot.docx'
 input_file = os.path.abspath(input_file)
 #file = os.getcwd() + "/" + input_file
-key = u'công ty cổ phần thanh toán hưng hà'
+'''key = u'công ty cổ phần thanh toán hưng hà'
 value = u'Công Ty Cổ Phần Thanh Toán Bảo Thịnh ABC'
 numberList=[1,3,6,8]
 start(input_file)
 stage2(input_file,key)
-stage3(input_file,key,value,numberList)
+stage3(input_file,key,value,numberList)'''

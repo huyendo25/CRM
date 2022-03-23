@@ -38,6 +38,7 @@ def findColor(filename,key,newName):
                     p = p.add_paragraph()
                     countKey=color_string(match.group(),countKey,p1,p)
     doc.save(newName)
+    return countKey
 
 def replace_string(key,value,numberList,countKey,p):
 ##    split đoạn văn và key thành list

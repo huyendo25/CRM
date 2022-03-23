@@ -92,9 +92,9 @@ def input_processing(input_file):
 ##    docx - pdf - folder ảnh - chuyển ảnh thành data truyền mạng
     input_pdf, output_file = input_file_processing(input_file)
     input_image = pdf_to_img(input_pdf)
-    img_org_base64 = {}
+    img_org_base64 = []
     files = os.listdir(input_image)
     for file in files:
         image = input_image + '/' + file
-        img_org_base64[file] = imageToBase64(image)
-    return input_image,output_file,img_org_base64
+        img_org_base64.append(imageToBase64(image))
+    return output_file,img_org_base64

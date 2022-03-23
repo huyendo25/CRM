@@ -1,6 +1,6 @@
 from flask import Flask, flash, request, redirect, url_for , jsonify , send_file ,send_from_directory
 from werkzeug.utils import secure_filename
-from OCR_CRM import *
+from crm import *
 import json
 import time
 
@@ -26,22 +26,16 @@ ALLOWED_EXTENSIONS = {'docx','doc','pdf'}
 
 # app = Flask(__name__)
 app = Flask(__name__, static_url_path='/static')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['upload_folder'] = UPLOAD_FOLDER 
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-results = {}
-input_image = {}
-output_file = {}
-dic_stt = {}
-list_new_text = {}
-number_img = {}
-img_org_base64 = {}
+input_file = {}
 dic_new_text = {}
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/upload_file', methods=['GET', 'POST'])
 def upload_file():
     error = None
     data = None
@@ -61,22 +55,19 @@ def upload_file():
             # return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # print(filename)
+            print('filename - ',filename)
             file_name, file_end = os.path.splitext(filename)
             path_file_name = file_name + '_' + sess_id
-            path_file = os.path.join(app.config['UPLOAD_FOLDER'], path_file_name )
+            path_file = os.path.join(app.config['upload_folder'], path_file_name )
             if not os.path.exists(path_file):
                 os.makedirs(path_file)
-            save_path = os.path.join(path_file, filename)
-            # print(save_path)
-            file.save(save_path)
-            results[sess_id], input_image[sess_id], output_file[sess_id] , img_org_base64[sess_id] = input_file_processing(save_path,path_file)
-            # print(results[sess_id])
-            # word_index[sess_id] = 0
-            # print(results)
-            # return redirect(url_for('upload_file',
-            #                         filename=filename))
-            item = {"sess_id": sess_id , "image" : img_org_base64[sess_id]}
+            input_file[sess_id] = os.path.join(path_file, filename)
+            print('save_path - ',input_file[sess_id])
+            file.save(input_file[sess_id])
+            img_org_base64 = start(input_file[sess_id])
+
+            item = {"sess_id": sess_id , "image" : img_org_base64}
+            print(type(img_org_base64))
             data = DataModel(True, " Xử lí file thành công ", item)
     time_s = time.time()
     print("Time upload file : {}".format(time_s-time_t))
@@ -92,18 +83,16 @@ def upload_file():
 def search():
     error = None
     data = None
-    # text_change = request.args.get('text_change')
     sess_id = request.args.get('sess_id')
     word_index = request.args.get('word_index')
     # print(word_index[sess_id])
     word_index = int(word_index)
     if request.method == 'POST':
-        text_change = request.form['text_change']
+        key = request.form['text_change']
         if word_index == 0:
-            dic_stt[sess_id] = find_paint_list(text_change, input_image[sess_id], results[sess_id])
-            number_img[sess_id] = len(dic_stt[sess_id])
-            if number_img[sess_id] == 0:
-                item = {"sess_id": sess_id, "number_img": number_img[sess_id]}
+            img_base64, countKey = stage2(input_file[sess_id],key)
+            if countKey == 0:
+                item = {"sess_id": sess_id, "number_img": countKey}
                 data = DataModel(True, " Không có chuỗi khớp ", item)
                 if error is not None:
                     error = vars(error)
@@ -111,18 +100,10 @@ def search():
                     data = vars(data)
                 response = ResponseModel(data, error)
                 return json.dumps(vars(response))
-                # return str(number_img[sess_id])
             else:
-                img_base64 = text_processing(text_change, word_index, input_image[sess_id], results[sess_id],
-                                            dic_stt[sess_id])
-                # if word_index[sess_id] + 1 == number_img[sess_id]:
-                #     word_index[sess_id] = 0
-                # else:
-                #     word_index[sess_id] += 1
-                # sc = jsonify({'image': 'data:image/png;base64,' + img_base64, 'number_img': number_img[sess_id]})
-                # sc.status_code = 200
-                # return sc
-                item = {"sess_id": sess_id, "number_img": number_img[sess_id],
+                img_base64 = img_base64
+
+                item = {"sess_id": sess_id, "number_img": countKey,
                         "image": img_base64}
                 data = DataModel(True, " Ảnh trả về ", item)
                 if error is not None:
@@ -133,13 +114,7 @@ def search():
                 return json.dumps(vars(response))
 
         else:
-            img_base64 = text_processing(text_change, word_index, input_image[sess_id], results[sess_id],
-                                        dic_stt[sess_id])
-            # if word_index[sess_id] + 1 == number_img[sess_id]:
-            #     word_index[sess_id] = 0
-            # else:
-            #     word_index[sess_id] += 1
-
+            img_base64, countKey = stage2(input_file[sess_id],key)
             item = {"sess_id": sess_id, "image":  img_base64}
             data = DataModel(True, " Ảnh trả về ", item)
         if error is not None:
@@ -149,25 +124,25 @@ def search():
         response = ResponseModel(data, error)
         return json.dumps(vars(response))
 
-
 @app.route('/replace_file', methods=['GET', 'POST'])
 def replace():
     error = None
     data = None
     # text_change = request.args.get('text_change')
     sess_id = request.args.get('sess_id')
-    # [{
-    #     "new_text": ["BANTHE", "", "BANTHE"]
-    # }]
     contents = request.json
-    # print(contents)
+    
+    numberList = []
     for content in contents:
-        dic_new_text[sess_id] = content['new_text']
-    for text_change in dic_new_text[sess_id]:
-        thay_doi_chu_word(output_file[sess_id], text_change, dic_new_text[sess_id][text_change])
+        numberList.append(content['index'])
+    #print(contents)
+    key = contents[0]['name']
+    value = contents[0]['replace_with']
+    #print(key)
+    img_org_base64,output_file = stage3(input_file[sess_id],key,value,numberList)
+    
     # print(output_file[sess_id])
-
-    item = {"sess_id" : sess_id , "url": output_file[sess_id]}
+    item = {"sess_id" : sess_id , "img_org_base64": img_org_base64,"url": output_file}
     data = DataModel(True, "File thay đổi thành công ", item)
     if error is not None:
         error = vars(error)
@@ -175,7 +150,6 @@ def replace():
         data = vars(data)
     response = ResponseModel(data, error)
     return json.dumps(vars(response))
-
 
 @app.route("/delete" ,methods=['GET', 'POST'])
 def delete():
@@ -208,5 +182,4 @@ def static_dir(path):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=4000)
-
+    app.run (host='0.0.0.0', port=4000)
