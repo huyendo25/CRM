@@ -1,3 +1,4 @@
+from pickle import NONE
 from flask import Flask, flash, request, redirect, url_for , jsonify , send_file ,send_from_directory
 from werkzeug.utils import secure_filename
 from crm import *
@@ -24,7 +25,6 @@ class ResponseModel:
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'docx','doc','pdf'}
 
-# app = Flask(__name__)
 app = Flask(__name__, static_url_path='/static')
 app.config['upload_folder'] = UPLOAD_FOLDER 
 
@@ -41,18 +41,12 @@ def upload_file():
     data = None
     time_t = time.time()
     sess_id = request.args.get('sess_id')
-    # print(sess_id)
     if request.method == 'POST':
-        # check if the post request has the file part
         if 'file' not in request.files:
             flash('No file part')
-            # return redirect(request.url)
         file = request.files['file']
-        # if user does not select file, browser also
-        # submit an empty part without filename
         if file.filename == '':
             flash('No selected file')
-            # return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             print('filename - ',filename)
@@ -78,44 +72,25 @@ def upload_file():
     response = ResponseModel(data, error)
     return json.dumps(vars(response))
 
-
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     error = None
     data = None
     sess_id = request.args.get('sess_id')
-    word_index = request.args.get('word_index')
-    # print(word_index[sess_id])
-    word_index = int(word_index)
     if request.method == 'POST':
         key = request.form['text_change']
-        if word_index == 0:
-            img_base64, countKey = stage2(input_file[sess_id],key)
-            if countKey == 0:
-                item = {"sess_id": sess_id, "number_img": countKey}
-                data = DataModel(True, " Không có chuỗi khớp ", item)
-                if error is not None:
-                    error = vars(error)
-                if data is not None:
-                    data = vars(data)
-                response = ResponseModel(data, error)
-                return json.dumps(vars(response))
-            else:
-                img_base64 = img_base64
-
-                item = {"sess_id": sess_id, "number_img": countKey,
-                        "image": img_base64}
-                data = DataModel(True, " Ảnh trả về ", item)
-                if error is not None:
-                    error = vars(error)
-                if data is not None:
-                    data = vars(data)
-                response = ResponseModel(data, error)
-                return json.dumps(vars(response))
-
+        img_base64, countKey = stage2(input_file[sess_id],key)
+        if countKey == 0:
+            item = {"sess_id": sess_id, "number_img": countKey}
+            data = DataModel(True, " Không có chuỗi khớp ", item)
+            if error is not None:
+                error = vars(error)
+            if data is not None:
+                data = vars(data)
+            response = ResponseModel(data, error)
+            return json.dumps(vars(response))
         else:
-            img_base64, countKey = stage2(input_file[sess_id],key)
-            item = {"sess_id": sess_id, "image":  img_base64}
+            item = {"sess_id": sess_id, "number_img": countKey, "image":  img_base64}
             data = DataModel(True, " Ảnh trả về ", item)
         if error is not None:
             error = vars(error)
@@ -128,20 +103,14 @@ def search():
 def replace():
     error = None
     data = None
-    # text_change = request.args.get('text_change')
     sess_id = request.args.get('sess_id')
     contents = request.json
-    
     numberList = []
     for content in contents:
         numberList.append(content['index'])
-    #print(contents)
     key = contents[0]['name']
     value = contents[0]['replace_with']
-    #print(key)
     img_org_base64,output_file = stage3(input_file[sess_id],key,value,numberList)
-    
-    # print(output_file[sess_id])
     item = {"sess_id" : sess_id , "img_org_base64": img_org_base64,"url": output_file}
     data = DataModel(True, "File thay đổi thành công ", item)
     if error is not None:
@@ -151,7 +120,7 @@ def replace():
     response = ResponseModel(data, error)
     return json.dumps(vars(response))
 
-@app.route("/delete" ,methods=['GET', 'POST'])
+'''@app.route("/delete" ,methods=['GET', 'POST'])
 def delete():
     error = None
     data = None
@@ -173,13 +142,11 @@ def delete():
     if data is not None:
         data = vars(data)
     response = ResponseModel(data, error)
-    return json.dumps(vars(response))
-
+    return json.dumps(vars(response))'''
 
 @app.route("/static/<path:path>")
 def static_dir(path):
     return send_from_directory("static", path)
-
 
 if __name__ == "__main__":
     app.run (host='0.0.0.0', port=4000)

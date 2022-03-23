@@ -1,5 +1,6 @@
 #from wand.image import Image as Img
 #from wand.color import Color
+from asyncore import file_wrapper
 from docx.enum.text import WD_COLOR_INDEX
 from docx import Document
 from docx2pdf import convert
@@ -70,7 +71,7 @@ def pdf_to_img(input_pdf):
         counter = counter+1
         if counter > number_page:
             break
-    return folder
+    return folder,number_page
         
 def imageToBase64(image): 
 ##    imencode mã hóa định dạng img thành data truyền trực tuyến và gán nó vào bộ nhớ đệm
@@ -91,10 +92,11 @@ def input_processing(input_file):
 ##    output: file đoc/docx, pdf, folder chứa images
 ##    docx - pdf - folder ảnh - chuyển ảnh thành data truyền mạng
     input_pdf, output_file = input_file_processing(input_file)
-    input_image = pdf_to_img(input_pdf)
+    input_image,number_page = pdf_to_img(input_pdf)
     img_org_base64 = []
     files = os.listdir(input_image)
-    for file in files:
-        image = input_image + '/' + file
+    for file in range(number_page):
+        print(file)
+        image = input_image + '/' + str(file)
         img_org_base64.append(imageToBase64(image))
     return output_file,img_org_base64

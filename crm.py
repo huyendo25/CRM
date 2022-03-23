@@ -8,8 +8,8 @@ def deleteFileFolder(input_file_name):
         os.remove(file)
     folder_path = input_file_name+'_img'
     #print(folder_path)
-    if os.path.exists(folder_path):
-        shutil.rmtree(folder_path)
+    #if os.path.exists(folder_path):
+        #shutil.rmtree(folder_path)
 
 def start(input_file):
 ##    Bước đầu tiên
@@ -63,10 +63,10 @@ def stage3(input_file,key,value,numberList):
     deleteFileFolder(input_file_name)
     return img_org_base64,output_file
     
-input_file = 'output/mot.docx'
+'''input_file = 'output/bienban.docx'
 input_file = os.path.abspath(input_file)
-#file = os.getcwd() + "/" + input_file
-'''key = u'công ty cổ phần thanh toán hưng hà'
+file = os.getcwd() + "/" + input_file
+key = u'đồng chí'
 value = u'Công Ty Cổ Phần Thanh Toán Bảo Thịnh ABC'
 numberList=[1,3,6,8]
 start(input_file)
