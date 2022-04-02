@@ -1,4 +1,35 @@
 from docxPdfImage import *
+from docx.enum.text import WD_COLOR_INDEX
+from docx.document import Document as _Document
+from docx.oxml.text.paragraph import CT_P
+from docx.oxml.table import CT_Tbl
+from docx.table import _Cell, Table
+from docx.text.paragraph import Paragraph
+import re
+
+"""
+Testing iter_block_items()
+"""
+def iter_block_items(parent):
+    """
+    Tạo tham chiếu đến từng đoạn và bảng con trong file doc, theo thứ tự tài liệu. 
+    Mỗi giá trị trả về là một thể hiện của Bảng hoặc Đoạn văn. 
+    'parent' thường là một tham chiếu đến một chính Đối tượng tài liệu, 
+    hoạt động cho đối tượng _Cell | đoạn văn | bảng
+    """
+    if isinstance(parent, _Document):
+        parent_elm = parent.element.body
+        # print(parent_elm.xml)
+    elif isinstance(parent, _Cell):
+        parent_elm = parent._tc
+    else:
+        raise ValueError("something's not right")
+
+    for child in parent_elm.iterchildren():
+        if isinstance(child, CT_P):
+            yield Paragraph(child, parent)
+        elif isinstance(child, CT_Tbl):
+            yield Table(child, parent)
 
 def color_string(key,countKey,p1,p):
 ##    tô vàng key
@@ -20,23 +51,22 @@ def findColor(filename,key,newName):
 ##    output: file đã tô vàng và đánh thứ tự cho key
     countKey = 0 # khởi tạo số thứ tự key
     doc = Document(filename)
-    for posPara in range(len(doc.paragraphs)): # duyệt đoạn
-        p = doc.paragraphs[posPara] 
-        p1 = p.text
-        match = re.search(key,p1,re.IGNORECASE)
-        if match: #so khớp không phân biệt hoa thường
-            p.text = ""
-            countKey=color_string(match.group(),countKey,p1,p)
-
-    for table in doc.tables: #duyệt bảng
-        for row in table.rows:
-            for p in row.cells:
-                p1 = p.text
-                match = re.search(key,p1,re.IGNORECASE)
-                if match: #so khớp không phân biệt hoa thường
-                    p.text = ""
-                    p = p.add_paragraph()
-                    countKey=color_string(match.group(),countKey,p1,p)
+    for block in iter_block_items(doc):
+        if isinstance(block, Paragraph):
+            p1 = block.text
+            match = re.search(key,p1,re.IGNORECASE)
+            if match: #so khớp không phân biệt hoa thường
+                block.text = ""
+                countKey=color_string(match.group(),countKey,p1,block)
+        else:
+            for row in block.rows:
+                for p in row.cells:
+                    p1 = p.text
+                    match = re.search(key,p1,re.IGNORECASE)
+                    if match: #so khớp không phân biệt hoa thường
+                        p.text = ""
+                        p = p.add_paragraph()
+                        countKey=color_string(match.group(),countKey,p1,p)
     doc.save(newName)
     return countKey
 
@@ -81,18 +111,13 @@ def replace(filename,key,value,numberList,output_file):
 ##    output: file word đã được thay từ ở những vị trí chỉ định
     countKey = 0 # khởi tạo số thứ tự key
     doc = Document(filename)
-    for posPara in range(len(doc.paragraphs)): # duyệt đoạn
-        p = doc.paragraphs[posPara]
-        if re.search(key,p.text,re.IGNORECASE): #so khớp không phân biệt hoa thường
-            countKey = replace_string(key,value,numberList,countKey,p)
-
-    for table in doc.tables:
-        for row in table.rows:
-            for p in row.cells:
-                if re.search(key,p.text,re.IGNORECASE): #so khớp không phân biệt hoa thường
-                    countKey = replace_string(key,value,numberList,countKey,p)    
+    for block in iter_block_items(doc):
+        if isinstance(block, Paragraph):
+            if re.search(key,block.text,re.IGNORECASE): #so khớp không phân biệt hoa thường
+                countKey = replace_string(key,value,numberList,countKey,block)
+        else:
+            for row in block.rows:
+                for p in row.cells:
+                    if re.search(key,p.text,re.IGNORECASE): #so khớp không phân biệt hoa thường
+                        countKey = replace_string(key,value,numberList,countKey,p)    
     doc.save(output_file)
-
-#replace ('/content/mot.docx', u'công ty cổ phần thanh toán hưng hà', u'Công Ty Cổ Phần Thanh Toán Bảo Thịnh ABC')
-#numberList = [1,3]
-#replace_string ('/content/mot.docx',u'Công Ty Cổ Phần Thanh Toán', u'Ban giám đốc',numberList)

@@ -1,7 +1,3 @@
-#from wand.image import Image as Img
-#from wand.color import Color
-from asyncore import file_wrapper
-from docx.enum.text import WD_COLOR_INDEX
 from docx import Document
 from docx2pdf import convert
 from subprocess import Popen
@@ -10,8 +6,6 @@ from pdf2image import convert_from_path
 import base64
 import cv2
 import os
-import re
-#import time
 
 def input_file_processing(input_file):
 ##    input: file docx cần xử lý
@@ -32,29 +26,6 @@ def input_file_processing(input_file):
     
     input_pdf = input_file_name + '.pdf'
     return input_pdf, input_file
-    
-''' def pdf_to_img(input_file):
-##    đổi từ PDF sang Image
-##    input: đường dẫn
-##    output: save ảnh .png
-    time_1 = time.time()
-    folder = input_file.split('.pd')[0] + '_img' # tên folder chứa ảnh
-    if not os.path.exists(folder):#nếu chưa có folder thì tạo folder
-        os.makedirs(folder)
-    input_folder,name = folder.split("/")
-    all_pages = Img(filename=input_file, resolution=300) # PDF với nhiều trang
-    for idx, page in enumerate(all_pages.sequence):
-        with Img(page) as img:
-            img.compression_quality = 99
-            img.format = 'png' 
-            img.background_color = Color('white')  # cài white background
-            img.alpha_channel = 'remove'  # loại bỏ nền ảnh trong suốt
-            img.save(filename=f'{folder}/{name}_{idx}.png')
-    time_c = time.time()
-    fps = time_c - time_1
-    print("Thời gian chuyển pdf sang ảnh : {}".format(fps))
-    return folder '''
-
 
 def pdf_to_img(input_pdf):
     pdf = read(open(input_pdf,'rb'))
@@ -96,7 +67,6 @@ def input_processing(input_file):
     img_org_base64 = []
     files = os.listdir(input_image)
     for file in range(number_page):
-        print(file)
         image = input_image + '/' + str(file)
         img_org_base64.append(imageToBase64(image))
     return output_file,img_org_base64
