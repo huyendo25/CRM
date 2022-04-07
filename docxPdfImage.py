@@ -1,3 +1,4 @@
+from email.mime import base
 from docx import Document
 from docx2pdf import convert
 from subprocess import Popen
@@ -66,7 +67,6 @@ def input_processing(input_file):
     input_pdf, output_file = input_file_processing(input_file)
     input_image,number_page = pdf_to_img(input_pdf)
     img_org_base64 = []
-    files = os.listdir(input_image)
     for file in range(number_page):
         image = input_image + '/' + str(file)
         img_org_base64.append(imageToBase64(image))
@@ -80,20 +80,27 @@ def search_processing(input_file):
     input_pdf, output_file = input_file_processing(input_file)
     input_image,number_page = pdf_to_img(input_pdf)
     img_org_base64 = []
-    files = os.listdir(input_image)
     for file in range(number_page):
         image = input_image + '/' + str(file)
-        image = cv2.imread(image)                
+        img_org_base64.append(imageToBase64(image))
+    colored_file = []
+    for i in range (len(img_org_base64)):
+        encoded_data = img_org_base64[i].split(',')[1]
+        encoded_data += "="*((4 - len(encoded_data) % 4) % 4) 
+        encoded_data = base64.urlsafe_b64decode(encoded_data)
+        
+        nparr = np.fromstring(encoded_data,np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)                
 
-        # define yellow color range
+        # gán khoảng giá trị cho màu vàng
         lower_ye = np.array([22, 93, 0], dtype="uint8")
         upper_ye = np.array([45, 255, 255], dtype="uint8")
 
-        # define red color range
+        # gán khoảng giá trị cho màu đỏ
         lower_red = np.array([160,100,20], dtype="uint8")
         upper_red = np.array([179,255,255], dtype="uint8")
                             
-        # Threshold the HSV image to get yellow colors
+        # đánh dấu những ảnh nằm trong dải màu ở trên
         ye_mask = cv2.inRange(image, lower_ye, upper_ye)
         red_mask = cv2.inRange(image, lower_red, upper_red)
 
@@ -101,8 +108,6 @@ def search_processing(input_file):
         pixels_2 = cv2.countNonZero(red_mask)
 
         if pixels_1 > 0 and pixels_2 > 0:
-            img_org_base64.append(imageToBase64(image))
-        else: 
-            os.remove(image) 
-        
-    return output_file,img_org_base64
+            colored_file.append(img_org_base64[i])
+
+    return output_file,colored_file

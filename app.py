@@ -89,7 +89,7 @@ def search():
             response = ResponseModel(data, error)
         else:
             if countKey == 0:
-                item = {"sess_id": sess_id, "number_img": countKey}
+                item = {"sess_id": sess_id, "number_text": countKey}
                 data = DataModel(False, " Không có chuỗi khớp ", item)
                 if error is not None:
                     error = vars(error)
@@ -97,7 +97,7 @@ def search():
                     data = vars(data)
                 response = ResponseModel(data, error)
             else:
-                item = {"sess_id": sess_id, "number_img": countKey, "image":  img_base64}
+                item = {"sess_id": sess_id, "number_text": countKey, "image":  img_base64}
                 data = DataModel(True, " Ảnh trả về ", item)
                 if error is not None:
                     error = vars(error)
