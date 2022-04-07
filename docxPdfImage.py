@@ -3,6 +3,7 @@ from docx2pdf import convert
 from subprocess import Popen
 from PyPDF2 import PdfFileReader as read
 from pdf2image import convert_from_path
+import numpy as np
 import base64
 import cv2
 import os
@@ -69,4 +70,39 @@ def input_processing(input_file):
     for file in range(number_page):
         image = input_image + '/' + str(file)
         img_org_base64.append(imageToBase64(image))
+    return output_file,img_org_base64
+
+def search_processing(input_file):
+##    với ảnh có màu vàng + đỏ trong bước tìm kiếm
+##    input: đường dẫn đến file docx cần xử lý
+##    output: file đoc/docx, pdf, folder chứa images
+##    docx - pdf - folder ảnh - chuyển ảnh thành data truyền mạng
+    input_pdf, output_file = input_file_processing(input_file)
+    input_image,number_page = pdf_to_img(input_pdf)
+    img_org_base64 = []
+    files = os.listdir(input_image)
+    for file in range(number_page):
+        image = input_image + '/' + str(file)
+        image = cv2.imread(image)                
+
+        # define yellow color range
+        lower_ye = np.array([22, 93, 0], dtype="uint8")
+        upper_ye = np.array([45, 255, 255], dtype="uint8")
+
+        # define red color range
+        lower_red = np.array([160,100,20], dtype="uint8")
+        upper_red = np.array([179,255,255], dtype="uint8")
+                            
+        # Threshold the HSV image to get yellow colors
+        ye_mask = cv2.inRange(image, lower_ye, upper_ye)
+        red_mask = cv2.inRange(image, lower_red, upper_red)
+
+        pixels_1 = cv2.countNonZero(ye_mask)
+        pixels_2 = cv2.countNonZero(red_mask)
+
+        if pixels_1 > 0 and pixels_2 > 0:
+            img_org_base64.append(imageToBase64(image))
+        else: 
+            os.remove(image) 
+        
     return output_file,img_org_base64

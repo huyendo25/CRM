@@ -37,7 +37,7 @@ def stage2(input_file,key):
     input_file_name = input_file_name+'_colored'
     output_file = input_file_name+input_file_end
     countKey = findColor(input_file,key,output_file)
-    output_file,img_org_base64 = input_processing(output_file)
+    output_file,img_org_base64 = search_processing(output_file)
     # Xóa file pdf,folder chứa ảnh khi đã chuyển qua base64 xong
     deleteFileFolder(input_file_name)
     file = input_file_name+'.docx'
